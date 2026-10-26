@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>QueryLab</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>QueryLab</h1>
+
+  <h2>Сервер</h2>
+  <button id="btn-health">Проверить</button>
+  <p id="healthOut"></p>
+
+  <h2>Поиск по OrderID</h2>
+  <input id="hashKey" value="ORD0050001">
+  <button id="btn-hash">Найти</button>
+  <p id="hashOut"></p>
+
+  <h2>Сумма на диапазоне</h2>
+  <input id="rangeL" type="number" value="0">
+  <input id="rangeR" type="number" value="5000">
+  <button id="btn-range">Посчитать</button>
+  <p id="rangeOut"></p>
+
+  <h2>Изменить значение</h2>
+  <input id="updPos" type="number" value="100">
+  <input id="updVal" type="number" value="9999.99" step="0.01">
+  <button id="btn-update">Обновить</button>
+  <p id="updOut"></p>
+
+  <h2>Порог VIP</h2>
+  <input id="bsTarget" type="number" value="5000">
+  <button id="btn-binary">Найти</button>
+  <p id="bsOut"></p>
+
+  <h2>Выручка за период (Prefix Sum)</h2>
+  <input id="prefL" type="number" value="0">
+  <input id="prefR" type="number" value="2">
+  <button id="btn-prefix">Получить</button>
+  <p id="prefOut" style="color: blue; font-weight: bold;"></p>
+
+  <script>
+    // Утилиты
+    async function post(path, body) {
+      const r = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || "Ошибка сервера");
+      return data;
+    }
+
+    async function get(path) {
+      const r = await fetch(path);
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || "Ошибка сервера");
+      return data;
+    }
+
+    function out(id, text) {
+      document.getElementById(id).textContent = text;
+    }
+
+    // Привязка кнопок через ID
+    document.getElementById("btn-health").addEventListener("click", async () => {
+      try {
+        const d = await get("/api/health");
+        out("healthOut", "OK, строк: " + d.rows);
+      } catch (e) { out("healthOut", "Ошибка: " + e.message); }
+    });
+
+    document.getElementById("btn-hash").addEventListener("click", async () => {
+      try {
+        const key = document.getElementById("hashKey").value;
+        const d = await post("/api/query/hash", { key });
+        out("hashOut", "row_id: " + d.row_id);
+      } catch (e) { out("hashOut", "Ошибка: " + e.message); }
+    });
+
+    document.getElementById("btn-range").addEventListener("click", async () => {
+      try {
+        const l = +document.getElementById("rangeL").value;
+        const r = +document.getElementById("rangeR").value;
+        const d = await post("/api/query/segment", { l, r });
+        out("rangeOut", "Сумма: " + d.sum);
+      } catch (e) { out("rangeOut", "Ошибка: " + e.message); }
+    });
+
+    document.getElementById("btn-update").addEventListener("click", async () => {
+      try {
+        const pos = +document.getElementById("updPos").value;
+        const value = +document.getElementById("updVal").value;
+        const d = await post("/api/segment/update", { pos, value });
+        out("updOut", "Готово: " + d.new_value);
+      } catch (e) { out("updOut", "Ошибка: " + e.message); }
+    });
+
+    document.getElementById("btn-binary").addEventListener("click", async () => {
+      try {
+        const target = +document.getElementById("bsTarget").value;
+        const d = await post("/api/query/binary", { target });
+        out("bsOut", "Порог: " + d.answer);
+      } catch (e) { out("bsOut", "Ошибка: " + e.message); }
+    });
+
+    document.getElementById("btn-prefix").addEventListener("click", async () => {
+      out("prefOut", "Загрузка...");
+      try {
+        const l = +document.getElementById("prefL").value;
+        const r = +document.getElementById("prefR").value;
+
+        const response = await fetch(`/api/prefix?l=${l}&r=${r}`);
+        const text = await response.text();
+
+        if (!response.ok) {
+            throw new Error(`Сервер вернул ${response.status}. Ответ: ${text}`);
+        }
+
+        const d = JSON.parse(text);
+        out("prefOut", `С ${d.start_date} по ${d.end_date} (дней: ${d.days_count}): ${d.revenue}`);
+      } catch (e) {
+        out("prefOut", "ОШИБКА: " + e.message);
+      }
+    });
+  </script>
+
+</body>
+</html>
