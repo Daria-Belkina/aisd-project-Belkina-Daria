@@ -2,131 +2,240 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>QueryLab</title>
+  <title>Amazon Analytics</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>QueryLab</h1>
+<div class="container">
+  <h1>📊 Amazon Analytics</h1>
 
-  <h2>Сервер</h2>
-  <button id="btn-health">Проверить</button>
-  <p id="healthOut"></p>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showScreen(1)">1. Статистика</button>
+    <button class="tab-btn" onclick="showScreen(2)">2. Статусы</button>
+    <button class="tab-btn" onclick="showScreen(3)">3. Поиск по ID</button>
+    <button class="tab-btn" onclick="showScreen(4)">4. Segment Tree</button>
+    <button class="tab-btn" onclick="showScreen(5)">5. Prefix Sum</button>
+    <button class="tab-btn" onclick="showScreen(6)">6. План брендов</button>
+  </div>
 
-  <h2>Поиск по OrderID</h2>
-  <input id="hashKey" value="ORD0050001">
-  <button id="btn-hash">Найти</button>
-  <p id="hashOut"></p>
+  <!-- ЭКРАН 1 -->
+  <div id="screen-1" class="screen active">
+    <h2>Статистика продаж</h2>
+    <div class="controls">
+      <select id="statsType">
+        <option value="product">По продуктам</option>
+        <option value="category">По категориям</option>
+        <option value="brand">По брендам</option>
+        <option value="payment">По способу оплаты</option>
+        <option value="country">По странам</option>
+      </select>
+      <button class="action-btn" onclick="loadStats()">Показать</button>
+    </div>
+    <table id="statsTable">
+      <thead><tr><th>Название</th><th>Сумма</th><th>Процент от общего</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  <h2>Сумма на диапазоне</h2>
-  <input id="rangeL" type="number" value="0">
-  <input id="rangeR" type="number" value="5000">
-  <button id="btn-range">Посчитать</button>
-  <p id="rangeOut"></p>
+  <!-- ЭКРАН 2 -->
+  <div id="screen-2" class="screen">
+    <h2>Отслеживание заказов по статусам</h2>
+    <button class="action-btn" onclick="loadStatuses()" style="margin-bottom: 15px;">Загрузить статусы</button>
+    <table id="statusTable">
+      <thead><tr><th>Статус</th><th>Количество (шт)</th><th>Общая сумма</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  <h2>Изменить значение</h2>
-  <input id="updPos" type="number" value="100">
-  <input id="updVal" type="number" value="9999.99" step="0.01">
-  <button id="btn-update">Обновить</button>
-  <p id="updOut"></p>
+  <!-- ЭКРАН 3 -->
+  <div id="screen-3" class="screen">
+    <h2>Поиск заказа по ID (HashMap)</h2>
+    <div class="controls">
+      <input type="text" id="hashInput" value="ORD0050001" placeholder="Введите OrderID">
+      <button class="action-btn" onclick="searchHash()">Найти</button>
+    </div>
+    <div id="hashResult" class="result-box" style="display:none;"></div>
+  </div>
 
-  <h2>Порог VIP</h2>
-  <input id="bsTarget" type="number" value="5000">
-  <button id="btn-binary">Найти</button>
-  <p id="bsOut"></p>
+  <!-- ЭКРАН 4 -->
+  <div id="screen-4" class="screen">
+    <h2>Сумма на диапазоне (Segment Tree)</h2>
+    <p style="color: #666; margin-bottom: 15px; font-size: 14px;">⚠️ L и R — это порядковые номера заказов по времени.</p>
+    <div class="controls">
+      <input type="number" id="segL" value="0" placeholder="L">
+      <input type="number" id="segR" value="5000" placeholder="R">
+      <button class="action-btn" onclick="querySegment()">Посчитать</button>
+    </div>
+    <div id="segResult" class="result-box" style="display:none;"></div>
 
-  <h2>Выручка за период (Prefix Sum)</h2>
-  <input id="prefL" type="number" value="0">
-  <input id="prefR" type="number" value="2">
-  <button id="btn-prefix">Получить</button>
-  <p id="prefOut" style="color: blue; font-weight: bold;"></p>
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+    <h3>Изменить значение</h3>
+    <div class="controls">
+      <input type="number" id="updPos" value="100" placeholder="Позиция">
+      <input type="number" id="updVal" value="9999.99" step="0.01" placeholder="Сумма">
+      <button class="action-btn" style="background: #F59E0B;" onclick="updateSegment()">Обновить</button>
+    </div>
+    <div id="updResult" class="result-box" style="display:none;"></div>
+  </div>
 
-  <script>
-    // Утилиты
-    async function post(path, body) {
-      const r = await fetch(path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.detail || "Ошибка сервера");
-      return data;
-    }
+  <!-- ЭКРАН 5 -->
+  <div id="screen-5" class="screen">
+    <h2>Сумма за период (Prefix Sum)</h2>
+    <p style="color: #666; margin-bottom: 15px; font-size: 14px;">L и R — это индексы ДНЕЙ (от 0 до 1824).</p>
+    <div class="controls">
+      <input type="number" id="prefL" value="0" placeholder="L">
+      <input type="number" id="prefR" value="30" placeholder="R">
+      <button class="action-btn" onclick="queryPrefix()">Получить выручку</button>
+    </div>
+    <div id="prefResult" class="result-box" style="display:none;"></div>
+  </div>
 
-    async function get(path) {
-      const r = await fetch(path);
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.detail || "Ошибка сервера");
-      return data;
-    }
+  <!-- ЭКРАН 6 -->
+  <div id="screen-6" class="screen">
+    <h2>План для брендов (Binary Search)</h2>
 
-    function out(id, text) {
-      document.getElementById(id).textContent = text;
-    }
+    <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+      <b>Как работает алгоритм:</b><br>
+      Вы хотите дать привилегии лучшим брендам. Введите количество брендов <b>N</b>, которых хотите поощрить.<br>
+      Алгоритм бинарным поиском найдет такую <b>минимальную сумму выручки (план)</b>, при которой эту планку преодолеют ровно <b>N</b> лучших брендов.
+    </div>
 
-    // Привязка кнопок через ID
-    document.getElementById("btn-health").addEventListener("click", async () => {
-      try {
-        const d = await get("/api/health");
-        out("healthOut", "OK, строк: " + d.rows);
-      } catch (e) { out("healthOut", "Ошибка: " + e.message); }
-    });
+    <div class="controls">
+      <label style="font-weight: bold;">Сколько лучших брендов поощрить (N):</label>
+      <input type="number" id="bsTarget" value="3" min="1" placeholder="N">
+      <button class="action-btn" onclick="queryBinary()">Рассчитать план</button>
+    </div>
+    <div id="bsResult" style="margin-top: 20px;"></div>
+  </div>
 
-    document.getElementById("btn-hash").addEventListener("click", async () => {
-      try {
-        const key = document.getElementById("hashKey").value;
-        const d = await post("/api/query/hash", { key });
-        out("hashOut", "row_id: " + d.row_id);
-      } catch (e) { out("hashOut", "Ошибка: " + e.message); }
-    });
+</div>
 
-    document.getElementById("btn-range").addEventListener("click", async () => {
-      try {
-        const l = +document.getElementById("rangeL").value;
-        const r = +document.getElementById("rangeR").value;
-        const d = await post("/api/query/segment", { l, r });
-        out("rangeOut", "Сумма: " + d.sum);
-      } catch (e) { out("rangeOut", "Ошибка: " + e.message); }
-    });
+<script>
+  function showScreen(num) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`screen-${num}`).classList.add('active');
+    document.querySelectorAll('.tab-btn')[num - 1].classList.add('active');
+  }
 
-    document.getElementById("btn-update").addEventListener("click", async () => {
-      try {
-        const pos = +document.getElementById("updPos").value;
-        const value = +document.getElementById("updVal").value;
-        const d = await post("/api/segment/update", { pos, value });
-        out("updOut", "Готово: " + d.new_value);
-      } catch (e) { out("updOut", "Ошибка: " + e.message); }
-    });
+  function showRes(id, text, isError = false) {
+    const el = document.getElementById(id);
+    el.style.display = 'block';
+    el.className = 'result-box ' + (isError ? 'error' : 'success');
+    el.innerHTML = text;
+  }
 
-    document.getElementById("btn-binary").addEventListener("click", async () => {
-      try {
-        const target = +document.getElementById("bsTarget").value;
-        const d = await post("/api/query/binary", { target });
-        out("bsOut", "Порог: " + d.answer);
-      } catch (e) { out("bsOut", "Ошибка: " + e.message); }
-    });
+  async function post(path, body) {
+    const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Ошибка сервера");
+    return data;
+  }
 
-    document.getElementById("btn-prefix").addEventListener("click", async () => {
-      out("prefOut", "Загрузка...");
-      try {
-        const l = +document.getElementById("prefL").value;
-        const r = +document.getElementById("prefR").value;
+  async function get(path) {
+    const r = await fetch(path);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Ошибка сервера");
+    return data;
+  }
 
-        const response = await fetch(`/api/prefix?l=${l}&r=${r}`);
-        const text = await response.text();
+  async function loadStats() {
+    const type = document.getElementById("statsType").value;
+    const tbody = document.querySelector("#statsTable tbody");
+    tbody.innerHTML = "<tr><td colspan='3'>Загрузка...</td></tr>";
+    try {
+      const data = await get(`/api/stats/${type}`);
+      tbody.innerHTML = data.map(row => `
+        <tr><td>${row.name}</td><td>$${row.sum.toLocaleString()}</td><td><b>${row.percent}%</b></td></tr>
+      `).join('');
+    } catch (e) { tbody.innerHTML = `<tr><td colspan='3' style='color:red'>${e.message}</td></tr>`; }
+  }
 
-        if (!response.ok) {
-            throw new Error(`Сервер вернул ${response.status}. Ответ: ${text}`);
-        }
+  async function loadStatuses() {
+    const tbody = document.querySelector("#statusTable tbody");
+    tbody.innerHTML = "<tr><td colspan='3'>Загрузка...</td></tr>";
+    try {
+      const data = await get("/api/statuses");
+      tbody.innerHTML = data.map(row => `
+        <tr><td><b>${row.status}</b></td><td>${row.count.toLocaleString()} шт.</td><td>$${row.sum.toLocaleString()}</td></tr>
+      `).join('');
+    } catch (e) { tbody.innerHTML = `<tr><td colspan='3' style='color:red'>${e.message}</td></tr>`; }
+  }
 
-        const d = JSON.parse(text);
-        out("prefOut", `С ${d.start_date} по ${d.end_date} (дней: ${d.days_count}): ${d.revenue}`);
-      } catch (e) {
-        out("prefOut", "ОШИБКА: " + e.message);
+  async function searchHash() {
+    const key = document.getElementById("hashInput").value;
+    try {
+      const data = await post("/api/query/hash", { key });
+      let html = "<div class='grid-data'>";
+      for (const [k, v] of Object.entries(data)) {
+        html += `<div><span>${k}</span>: ${v}</div>`;
       }
-    });
-  </script>
+      html += "</div>";
+      showRes("hashResult", html);
+    } catch (e) { showRes("hashResult", e.message, true); }
+  }
+
+  async function querySegment() {
+    const l = +document.getElementById("segL").value;
+    const r = +document.getElementById("segR").value;
+    try {
+      const data = await post("/api/query/segment", { l, r });
+      showRes("segResult", `📅 Период: <b>${data.start}</b> — <b>${data.end}</b><br>💰 Сумма: <b>$${data.sum.toLocaleString()}</b>`);
+    } catch (e) { showRes("segResult", e.message, true); }
+  }
+
+  async function updateSegment() {
+    const pos = +document.getElementById("updPos").value;
+    const value = +document.getElementById("updVal").value;
+    try {
+      const data = await post("/api/segment/update", { pos, value });
+      showRes("updResult", `✅ Готово! Новая сумма на позиции ${pos}: <b>$${data.new_value}</b>`);
+    } catch (e) { showRes("updResult", e.message, true); }
+  }
+
+  async function queryPrefix() {
+    const l = +document.getElementById("prefL").value;
+    const r = +document.getElementById("prefR").value;
+    try {
+      const data = await get(`/api/prefix?l=${l}&r=${r}`);
+      showRes("prefResult", `📅 С ${data.start_date} по ${data.end_date} (${data.days_count} дн.)<br>💰 Выручка: <b>$${data.revenue.toLocaleString()}</b>`);
+    } catch (e) { showRes("prefResult", e.message, true); }
+  }
+
+  async function queryBinary() {
+    const target = +document.getElementById("bsTarget").value;
+    const resultDiv = document.getElementById("bsResult");
+    resultDiv.innerHTML = "<p>Ищем оптимальный план...</p>";
+
+    try {
+      const data = await post("/api/query/brand-plan", { target });
+
+      let winnersHtml = data.winners.map((w, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td><b>${w.name}</b></td>
+          <td>$${w.revenue.toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      resultDiv.innerHTML = `
+        <div class="result-box success" style="margin-bottom: 15px;">
+          🏆 <b>Минимальный план по выручке:</b> $${data.plan.toLocaleString()}<br>
+          📊 <b>Справились с планом:</b> ${data.count} брендов
+        </div>
+        <table>
+          <thead><tr><th>Место</th><th>Бренд</th><th>Выручка</th></tr></thead>
+          <tbody>${winnersHtml}</tbody>
+        </table>
+      `;
+    } catch (e) {
+      resultDiv.innerHTML = `<div class="result-box error">${e.message}</div>`;
+    }
+  }
+
+  loadStats();
+</script>
 
 </body>
 </html>
