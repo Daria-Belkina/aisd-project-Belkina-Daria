@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Amazon Analytics</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <h1>📊 Amazon Analytics</h1>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showScreen(1)">1. Статистика</button>
+    <button class="tab-btn" onclick="showScreen(2)">2. Статусы</button>
+    <button class="tab-btn" onclick="showScreen(3)">3. Поиск по ID</button>
+    <button class="tab-btn" onclick="showScreen(4)">4. Segment Tree</button>
+    <button class="tab-btn" onclick="showScreen(5)">5. Prefix Sum</button>
+    <button class="tab-btn" onclick="showScreen(6)">6. План брендов</button>
+    <button class="tab-btn" onclick="showScreen(7)">7. Рейтинг (PageRank)</button>
+    <button class="tab-btn" onclick="showScreen(8)">8. Топ заказов (Heap)</button>
+    <button class="tab-btn" onclick="showScreen(9)">9. По дням недели</button>
+  </div>
+
+  <!-- ЭКРАН 1 -->
+  <div id="screen-1" class="screen active">
+    <h2>Статистика продаж</h2>
+    <div class="controls">
+      <select id="statsType">
+        <option value="product">По продуктам</option>
+        <option value="category">По категориям</option>
+        <option value="brand">По брендам</option>
+        <option value="payment">По способу оплаты</option>
+        <option value="country">По странам</option>
+      </select>
+      <button class="action-btn" onclick="loadStats()">Показать</button>
+    </div>
+    <table id="statsTable">
+      <thead><tr><th>Название</th><th>Сумма</th><th>Процент от общего</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <!-- Блок для графика -->
+    <div id="statsChart" class="chart-container" style="display: none;"></div>
+  </div>
+
+  <!-- ЭКРАН 2 -->
+  <div id="screen-2" class="screen">
+    <h2>Отслеживание заказов по статусам</h2>
+    <button class="action-btn" onclick="loadStatuses()" style="margin-bottom: 15px;">Загрузить статусы</button>
+    <table id="statusTable">
+      <thead><tr><th>Статус</th><th>Количество (шт)</th><th>Общая сумма</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- ЭКРАН 3 -->
+  <div id="screen-3" class="screen">
+    <h2>Поиск заказа по ID (HashMap)</h2>
+    <div class="controls">
+      <input type="text" id="hashInput" value="ORD0050001" placeholder="Введите OrderID">
+      <button class="action-btn" onclick="searchHash()">Найти</button>
+    </div>
+    <div id="hashResult" class="result-box" style="display:none;"></div>
+  </div>
+
+  <!-- ЭКРАН 4 -->
+  <div id="screen-4" class="screen">
+    <h2>Сумма на диапазоне (Segment Tree)</h2>
+    <p style="color: #666; margin-bottom: 15px; font-size: 14px;">⚠️ L и R — это порядковые номера заказов по времени.</p>
+    <div class="controls">
+      <input type="number" id="segL" value="0" placeholder="L">
+      <input type="number" id="segR" value="5000" placeholder="R">
+      <button class="action-btn" onclick="querySegment()">Посчитать</button>
+    </div>
+    <div id="segResult" class="result-box" style="display:none;"></div>
+
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+    <h3>Изменить значение</h3>
+    <div class="controls">
+      <input type="number" id="updPos" value="100" placeholder="Позиция">
+      <input type="number" id="updVal" value="9999.99" step="0.01" placeholder="Сумма">
+      <button class="action-btn" style="background: #F59E0B;" onclick="updateSegment()">Обновить</button>
+    </div>
+    <div id="updResult" class="result-box" style="display:none;"></div>
+  </div>
+
+  <!-- ЭКРАН 5 -->
+  <div id="screen-5" class="screen">
+    <h2>Сумма за период (Prefix Sum)</h2>
+    <p style="color: #666; margin-bottom: 15px; font-size: 14px;">L и R — это индексы ДНЕЙ (от 0 до 1824).</p>
+    <div class="controls">
+      <input type="number" id="prefL" value="0" placeholder="L">
+      <input type="number" id="prefR" value="30" placeholder="R">
+      <button class="action-btn" onclick="queryPrefix()">Получить выручку</button>
+    </div>
+    <div id="prefResult" class="result-box" style="display:none;"></div>
+  </div>
+
+  <!-- ЭКРАН 6 -->
+  <div id="screen-6" class="screen">
+    <h2>План для брендов (Binary Search)</h2>
+    <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+      <b>Как работает алгоритм:</b><br>
+      Вы хотите дать привилегии лучшим брендам. Введите количество брендов <b>N</b>, которых хотите поощрить.<br>
+      Алгоритм бинарным поиском найдет такую <b>минимальную сумму выручки (план)</b>, при которой эту планку преодолеют ровно <b>N</b> лучших брендов.
+    </div>
+    <div class="controls">
+      <label style="font-weight: bold;">Сколько лучших брендов поощрить (N):</label>
+      <input type="number" id="bsTarget" value="3" min="1" placeholder="N">
+      <button class="action-btn" onclick="queryBinary()">Рассчитать план</button>
+    </div>
+    <div id="bsResult" style="margin-top: 20px;"></div>
+  </div>
+
+  <!-- ЭКРАН 7: PageRank -->
+  <div id="screen-7" class="screen">
+    <h2>Ранжирование (PageRank)</h2>
+    <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+      <b>Как работает алгоритм:</b><br>
+      Мы строим граф покупок. Если клиент покупает у "важных" брендов, его рейтинг растет. Если бренд покупают "авторитетные" клиенты — рейтинг бренда растет.
+    </div>
+    <button class="action-btn" onclick="loadPageRank()">Рассчитать рейтинг</button>
+    <div style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 300px;">
+        <h3 style="color: #4F46E5;">Топ-10 Брендов</h3>
+        <table id="prBrandsTable">
+          <thead><tr><th>Место</th><th>Бренд</th><th>Влияние</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+      <div style="flex: 1; min-width: 300px;">
+        <h3 style="color: #10B981;">Топ-10 Клиентов</h3>
+        <table id="prCustTable">
+          <thead><tr><th>Место</th><th>Клиент</th><th>Влияние</th></tr></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЭКРАН 8: MaxHeap -->
+  <div id="screen-8" class="screen">
+    <h2>Топ-10 самых дорогих заказов (Max-Heap)</h2>
+    <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+      <b>Как работает алгоритм:</b><br>
+      Чтобы найти Топ-10 из 100 000 заказов, мы не сортируем весь список. Мы загружаем данные в <b>Бинарную кучу (Max-Heap)</b>. В ней максимум всегда на вершине.
+    </div>
+    <button class="action-btn" onclick="loadTopOrders()">Найти самые дорогие заказы</button>
+    <div id="heapResult" style="margin-top: 20px;"></div>
+  </div>
+
+  <!-- ЭКРАН 9: Дни недели -->
+  <div id="screen-9" class="screen">
+    <h2>Активность по дням недели</h2>
+    <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+      Бизнесу важно знать, в какие дни люди покупают активнее. Самый прибыльный день подсвечен зеленым, убыточный — красным.
+    </div>
+    <button class="action-btn" onclick="loadWeekdayStats()">Показать статистику</button>
+    <div id="weekdayResult" style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px;"></div>
+  </div>
+
+</div>
+
+<script>
+  function showScreen(num) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`screen-${num}`).classList.add('active');
+    document.querySelectorAll('.tab-btn')[num - 1].classList.add('active');
+  }
+
+  function showRes(id, text, isError = false) {
+    const el = document.getElementById(id);
+    el.style.display = 'block';
+    el.className = 'result-box ' + (isError ? 'error' : 'success');
+    el.innerHTML = text;
+  }
+
+  async function post(path, body) {
+    const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Ошибка сервера");
+    return data;
+  }
+
+  async function get(path) {
+    const r = await fetch(path);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Ошибка сервера");
+    return data;
+  }
+
+  // 1. Статистика (Таблица + График)
+  async function loadStats() {
+    const type = document.getElementById("statsType").value;
+    const tbody = document.querySelector("#statsTable tbody");
+    const chartDiv = document.getElementById("statsChart");
+
+    tbody.innerHTML = "<tr><td colspan='3'>Загрузка...</td></tr>";
+    chartDiv.style.display = "none";
+
+    try {
+      const data = await get(`/api/stats/${type}`);
+
+      tbody.innerHTML = data.map(row => `
+        <tr><td>${row.name}</td><td>$${row.sum.toLocaleString()}</td><td><b>${row.percent}%</b></td></tr>
+      `).join('');
+
+      // Строим график по Топ-10
+      const top10 = data.slice(0, 10);
+      const maxPercent = Math.max(...top10.map(d => d.percent));
+
+      let chartHtml = "<h3 style='margin-bottom: 15px; color: #4B5563;'>Визуализация (Топ-10)</h3>";
+
+      top10.forEach(row => {
+        const width = (row.percent / maxPercent) * 100;
+        chartHtml += `
+          <div class="chart-row">
+            <div class="chart-label" title="${row.name}">${row.name}</div>
+            <div class="chart-bar-wrapper">
+              <div class="chart-bar" style="width: ${width}%;"></div>
+            </div>
+            <div class="chart-value">${row.percent}%</div>
+          </div>
+        `;
+      });
+
+      chartDiv.innerHTML = chartHtml;
+      chartDiv.style.display = "block";
+
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan='3' style='color:red'>${e.message}</td></tr>`;
+    }
+  }
+
+  async function loadStatuses() {
+    const tbody = document.querySelector("#statusTable tbody");
+    tbody.innerHTML = "<tr><td colspan='3'>Загрузка...</td></tr>";
+    try {
+      const data = await get("/api/statuses");
+      tbody.innerHTML = data.map(row => `
+        <tr><td><b>${row.status}</b></td><td>${row.count.toLocaleString()} шт.</td><td>$${row.sum.toLocaleString()}</td></tr>
+      `).join('');
+    } catch (e) { tbody.innerHTML = `<tr><td colspan='3' style='color:red'>${e.message}</td></tr>`; }
+  }
+
+  async function searchHash() {
+    const key = document.getElementById("hashInput").value;
+    try {
+      const data = await post("/api/query/hash", { key });
+      let html = "<div class='grid-data'>";
+      for (const [k, v] of Object.entries(data)) {
+        html += `<div><span>${k}</span>: ${v}</div>`;
+      }
+      html += "</div>";
+      showRes("hashResult", html);
+    } catch (e) { showRes("hashResult", e.message, true); }
+  }
+
+  async function querySegment() {
+    const l = +document.getElementById("segL").value;
+    const r = +document.getElementById("segR").value;
+    try {
+      const data = await post("/api/query/segment", { l, r });
+      showRes("segResult", `📅 Период: <b>${data.start}</b> — <b>${data.end}</b><br>💰 Сумма: <b>$${data.sum.toLocaleString()}</b>`);
+    } catch (e) { showRes("segResult", e.message, true); }
+  }
+
+  async function updateSegment() {
+    const pos = +document.getElementById("updPos").value;
+    const value = +document.getElementById("updVal").value;
+    try {
+      const data = await post("/api/segment/update", { pos, value });
+      showRes("updResult", `✅ Готово! Новая сумма на позиции ${pos}: <b>$${data.new_value}</b>`);
+    } catch (e) { showRes("updResult", e.message, true); }
+  }
+
+  async function queryPrefix() {
+    const l = +document.getElementById("prefL").value;
+    const r = +document.getElementById("prefR").value;
+    try {
+      const data = await get(`/api/prefix?l=${l}&r=${r}`);
+      showRes("prefResult", `📅 С ${data.start_date} по ${data.end_date} (${data.days_count} дн.)<br>💰 Выручка: <b>$${data.revenue.toLocaleString()}</b>`);
+    } catch (e) { showRes("prefResult", e.message, true); }
+  }
+
+  async function queryBinary() {
+    const target = +document.getElementById("bsTarget").value;
+    const resultDiv = document.getElementById("bsResult");
+    resultDiv.innerHTML = "<p>Ищем оптимальный план...</p>";
+
+    try {
+      const data = await post("/api/query/brand-plan", { target });
+
+      let winnersHtml = data.winners.map((w, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td><b>${w.name}</b></td>
+          <td>$${w.revenue.toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      resultDiv.innerHTML = `
+        <div class="result-box success" style="margin-bottom: 15px;">
+          🏆 <b>Минимальный план по выручке:</b> $${data.plan.toLocaleString()}<br>
+          📊 <b>Справились с планом:</b> ${data.count} брендов
+        </div>
+        <table>
+          <thead><tr><th>Место</th><th>Бренд</th><th>Выручка</th></tr></thead>
+          <tbody>${winnersHtml}</tbody>
+        </table>
+      `;
+    } catch (e) {
+      resultDiv.innerHTML = `<div class="result-box error">${e.message}</div>`;
+    }
+  }
+
+  async function loadPageRank() {
+    const brandsBody = document.querySelector("#prBrandsTable tbody");
+    const custBody = document.querySelector("#prCustTable tbody");
+    brandsBody.innerHTML = "<tr><td colspan='3'>Считаем...</td></tr>";
+    custBody.innerHTML = "<tr><td colspan='3'>Считаем...</td></tr>";
+
+    try {
+      const data = await get("/api/pagerank");
+      brandsBody.innerHTML = data.brands.map((b, i) => `
+        <tr><td><b>${i + 1}</b></td><td>${b.name}</td><td>${(b.score * 10000).toFixed(2)}</td></tr>
+      `).join('');
+      custBody.innerHTML = data.customers.map((c, i) => `
+        <tr><td><b>${i + 1}</b></td><td>${c.name}</td><td>${(c.score * 10000).toFixed(2)}</td></tr>
+      `).join('');
+    } catch (e) {
+      brandsBody.innerHTML = `<tr><td colspan='3' style='color:red'>${e.message}</td></tr>`;
+    }
+  }
+
+  async function loadTopOrders() {
+    const resultDiv = document.getElementById("heapResult");
+    resultDiv.innerHTML = "<p>Строим кучу...</p>";
+    try {
+      const data = await get("/api/top-orders");
+      let html = `<table><thead><tr><th>Место</th><th>OrderID</th><th>Сумма заказа</th></tr></thead><tbody>`;
+      data.forEach((order, i) => {
+        html += `<tr><td><b>${i + 1}</b></td><td>${order.order_id}</td><td>$${order.amount.toLocaleString()}</td></tr>`;
+      });
+      html += "</tbody></table>";
+      resultDiv.innerHTML = html;
+    } catch (e) { resultDiv.innerHTML = `<div class="result-box error">${e.message}</div>`; }
+  }
+
+    // 9. Явный зеленый/красный + подписи (Весь текст белый)
+  async function loadWeekdayStats() {
+    const resultDiv = document.getElementById("weekdayResult");
+    resultDiv.innerHTML = "<p>Считаем...</p>";
+
+    try {
+      const data = await get("/api/weekday-stats");
+
+      const maxSum = Math.max(...data.map(d => d.sum));
+      const minSum = Math.min(...data.map(d => d.sum));
+      const range = maxSum - minSum;
+
+      let html = "";
+      data.forEach(d => {
+        const ratio = range === 0 ? 0.5 : (d.sum - minSum) / range;
+
+        let bgColor;
+        // Делаем текст всегда белым для единого стиля
+        const textColor = "white";
+        let label = "";
+
+        if (ratio >= 0.95) {
+            bgColor = "#059669"; // Глубокий изумрудный
+            label = "<div style='font-size: 12px; margin-top: 5px; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 5px;'>🔥 Лучший день</div>";
+        } else if (ratio <= 0.05) {
+            bgColor = "#DC2626"; // Глубокий красный
+            label = "<div style='font-size: 12px; margin-top: 5px; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px 5px;'>📉 Худший день</div>";
+        } else {
+            // Оттенок от 10 (оранжевый) до 120 (зеленый)
+            const hue = Math.round(10 + ratio * 110);
+            // Яркость ставим 40%, чтобы белый текст на нем читался идеально
+            bgColor = `hsl(${hue}, 90%, 40%)`;
+        }
+
+        const fontSize = d.day.length > 8 ? "13px" : "15px";
+
+        html += `
+          <div style="flex: 1; min-width: 120px; padding: 15px 10px; text-align: center; border-radius: 12px; background: ${bgColor}; color: ${textColor}; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: transform 0.2s;">
+            <div style="font-size: ${fontSize}; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">${d.day}</div>
+            <div style="font-size: 22px; font-weight: 800; margin-top: 5px;">$${(d.sum / 1000).toFixed(0)}k</div>
+            ${label}
+          </div>
+        `;
+      });
+      resultDiv.innerHTML = html;
+    } catch (e) {
+      resultDiv.innerHTML = `<div class="result-box error">${e.message}</div>`;
+    }
+  }
+
+  loadStats();
+</script>
+
+</body>
+</html>
